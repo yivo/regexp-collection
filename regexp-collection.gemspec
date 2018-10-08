@@ -8,10 +8,10 @@ Gem::Specification.new do |s|
   s.version               = Regexp::Collection::VERSION
   s.author                = "Yaroslav Konoplov"
   s.email                 = "eahome00@gmail.com"
-  s.summary               = "Regular expression collection library for Ruby."
-  s.description           = "Regular expression collection library for Ruby."
+  s.summary               = "Regular expression collection for Ruby."
+  s.description           = "A gem providing pre-made and tested typical regular expressions for applications."
   s.homepage              = "https://github.com/yivo/regexp-collection"
-  s.license               = "Apache-2.0"
+  s.license               = "MIT"
   s.files                 = `git ls-files -z`.split("\x0")
   s.test_files            = `git ls-files -z -- {test,spec,features}/*`.split("\x0")
   s.require_paths         = ["lib"]
