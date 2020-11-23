@@ -112,4 +112,72 @@ class RegexpCollectionTest < Test::Unit::TestCase
     assert_false "+1foo".match?(regexp)
     assert_true "16".match?(regexp)
   end
+
+  test "Time.seconds_required" do
+    regexp = Regexp::Collection::Time.seconds_required
+    assert_false "".match?(regexp)
+    assert_false "foo".match?(regexp)
+    assert_false "12".match?(regexp)
+    assert_false "12:11".match?(regexp)
+    assert_false "12:11:".match?(regexp)
+    assert_true "12:11:10".match?(regexp)
+    assert_false "+12:11:10".match?(regexp)
+    assert_false "12:11:10foo".match?(regexp)
+    assert_false "12:11:60".match?(regexp)
+    assert_true "23:59:59".match?(regexp)
+    assert_false "24:00:00".match?(regexp)
+    assert_false "1:00".match?(regexp)
+    assert_true "1:00:00".match?(regexp)
+    assert_false "01:00".match?(regexp)
+    assert_true "01:00:00".match?(regexp)
+    assert_false "12:0:0".match?(regexp)
+    assert_true "12:10:09".match?(regexp)
+    assert_false "12:10:09.111".match?(regexp)
+  end
+
+  test "Time.seconds_optional" do
+    regexp = Regexp::Collection::Time.seconds_optional
+    assert_false "".match?(regexp)
+    assert_false "foo".match?(regexp)
+    assert_false "12".match?(regexp)
+    assert_true "12:11".match?(regexp)
+    assert_false "12:11:".match?(regexp)
+    assert_true "12:11:10".match?(regexp)
+    assert_false "+12:11:10".match?(regexp)
+    assert_false "12:11:10foo".match?(regexp)
+    assert_false "12:11:60".match?(regexp)
+    assert_true "23:59".match?(regexp)
+    assert_true "23:59:59".match?(regexp)
+    assert_false "24:00:00".match?(regexp)
+    assert_true "1:00:00".match?(regexp)
+    assert_true "1:00".match?(regexp)
+    assert_true "01:00:00".match?(regexp)
+    assert_true "01:00".match?(regexp)
+    assert_false "12:0:0".match?(regexp)
+    assert_true "12:10:09".match?(regexp)
+    assert_false "12:10:09.111".match?(regexp)
+  end
+
+  test "Time.seconds_not_permitted" do
+    regexp = Regexp::Collection::Time.seconds_not_permitted
+    assert_false "".match?(regexp)
+    assert_false "foo".match?(regexp)
+    assert_false "12".match?(regexp)
+    assert_true "12:11".match?(regexp)
+    assert_false "12:11:".match?(regexp)
+    assert_false "12:11:10".match?(regexp)
+    assert_false "+12:11:10".match?(regexp)
+    assert_false "12:11:10foo".match?(regexp)
+    assert_false "12:11:60".match?(regexp)
+    assert_true "23:59".match?(regexp)
+    assert_false "23:59:59".match?(regexp)
+    assert_false "24:00:00".match?(regexp)
+    assert_false "1:00:00".match?(regexp)
+    assert_true "1:00".match?(regexp)
+    assert_false "01:00:00".match?(regexp)
+    assert_true "01:00".match?(regexp)
+    assert_false "12:0:0".match?(regexp)
+    assert_false "12:10:09".match?(regexp)
+    assert_false "12:10:09.111".match?(regexp)
+  end
 end
