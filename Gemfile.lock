@@ -7,7 +7,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     power_assert (1.1.3)
-    rake (12.3.1)
+    rake (13.0.1)
     test-unit (3.2.8)
       power_assert
 
@@ -16,7 +16,7 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 1.7)
-  rake (~> 12.3)
+  rake (~> 13.0)
   regexp-collection!
   test-unit (~> 3.2)
 
