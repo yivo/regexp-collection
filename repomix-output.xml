@@ -1,0 +1,569 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+lib/
+  regexp_collection/
+    version.rb
+  regexp_collection.rb
+  regexp-collection.rb
+test/
+  test_helper.rb
+  test_regexp_collection.rb
+.gitignore
+.ruby-version
+Gemfile
+LICENSE
+Rakefile
+README.md
+regexp-collection.gemspec
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="lib/regexp_collection/version.rb">
+# frozen_string_literal: true
+
+module Regexp::Collection
+  VERSION = "2.0.0"
+end
+</file>
+
+<file path="lib/regexp_collection.rb">
+# frozen_string_literal: true
+
+module Regexp::Collection
+  module Number
+    class << self
+      attr_accessor :integer, :decimal, :natural_including_zero, :natural_excluding_zero, :hexadecimal
+
+      def natural(zero = false)
+        zero ? natural_including_zero : natural_excluding_zero
+      end
+    end
+
+    # Matches integers without leading zeros (except single 0), e.g., -10, 0, 42
+    self.integer = /\A(?:-?[1-9]\d*|0)\z/.freeze
+
+    # Matches decimals: integers or numbers with a dot followed by digits.
+    # Correctly supports negative decimals while rejecting -0 and -0.0
+    self.decimal = /\A(?:-?[1-9]\d*(?:\.\d+)?|-0\.\d*[1-9]\d*|0(?:\.\d+)?)\z/.freeze
+
+    # Matches natural numbers including 0
+    self.natural_including_zero = /\A(?:0|[1-9]\d*)\z/.freeze
+
+    # Matches natural numbers strictly greater than 0
+    self.natural_excluding_zero = /\A[1-9]\d*\z/.freeze
+
+    # Matches hexadecimal literals with 0x or 0X prefix (case-insensitive hex digits)
+    self.hexadecimal = /\A0[xX][a-fA-F0-9]+\z/.freeze
+  end
+
+  module Time
+    class << self
+      attr_accessor :seconds_required, :seconds_not_permitted, :seconds_optional
+    end
+
+    # HH:MM:SS (hour 0-23, single digit permitted: 0-9)
+    self.seconds_required = /\A(?:[01]?\d|2[0-3]):[0-5]\d:[0-5]\d\z/.freeze
+
+    # HH:MM
+    self.seconds_not_permitted = /\A(?:[01]?\d|2[0-3]):[0-5]\d\z/.freeze
+
+    # HH:MM or HH:MM:SS
+    self.seconds_optional = /\A(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\z/.freeze
+  end
+
+  module Crypto
+    class << self
+      attr_accessor \
+        :trx_wallet_address_base58,
+        :evm_wallet_address,
+        :evm_transaction_hash,
+        :tx_mainnet_wallet_address_bech32,
+        :tx_testnet_wallet_address_bech32
+    end
+
+    # Tron Base58Check address: starts with T, 34 chars total, excludes 0, O, I, l
+    self.trx_wallet_address_base58 = /\AT[1-9A-HJ-NP-Za-km-z]{33}\z/.freeze
+
+    # EVM address: 0x followed by exactly 40 hexadecimal characters
+    self.evm_wallet_address = /\A0x[a-fA-F0-9]{40}\z/.freeze
+
+    # EVM transaction hash: 0x followed by exactly 64 hexadecimal characters
+    self.evm_transaction_hash = /\A0x[a-fA-F0-9]{64}\z/.freeze
+
+    self.tx_mainnet_wallet_address_bech32 = /\Acore1[02-9ac-hj-np-z]{38}\z/.freeze
+
+    self.tx_testnet_wallet_address_bech32 = /\Atestcore1[02-9ac-hj-np-z]{38}\z/.freeze
+  end
+end
+</file>
+
+<file path="test/test_helper.rb">
+# frozen_string_literal: true
+
+require "test-unit"
+require "regexp_collection"
+
+Test::Unit::TestCase.test_order = :random
+</file>
+
+<file path="test/test_regexp_collection.rb">
+# frozen_string_literal: true
+
+require_relative "test_helper"
+
+class RegexpCollectionTest < Test::Unit::TestCase
+  test "Version constant" do
+    assert_not_nil Regexp::Collection::VERSION
+    assert_true Regexp::Collection::VERSION.match?(/\A\d+\.\d+\.\d+\z/)
+  end
+
+  test "Number.integer" do
+    regexp = Regexp::Collection::Number.integer
+
+    # Valid
+    assert_true "0".match?(regexp)
+    assert_true "1".match?(regexp)
+    assert_true "2".match?(regexp)
+    assert_true "-1".match?(regexp)
+    assert_true "10".match?(regexp)
+    assert_true "100".match?(regexp)
+    assert_true "1000".match?(regexp)
+    assert_true "9999".match?(regexp)
+    assert_true "-9999".match?(regexp)
+    assert_true "9000000".match?(regexp)
+
+    # Invalid - zero variations
+    assert_false "-0".match?(regexp)
+    assert_false "+0".match?(regexp)
+    assert_false "00".match?(regexp)
+    assert_false "-00".match?(regexp)
+    assert_false "+00".match?(regexp)
+
+    # Invalid - leading plus and leading zeros
+    assert_false "+1".match?(regexp)
+    assert_false "+42".match?(regexp)
+    assert_false "01".match?(regexp)
+    assert_false "-01".match?(regexp)
+
+    # Invalid - characters and formatting
+    assert_false "".match?(regexp)
+    assert_false " ".match?(regexp)
+    assert_false "-".match?(regexp)
+    assert_false "1xx".match?(regexp)
+    assert_false "xx1".match?(regexp)
+    assert_false "-x1".match?(regexp)
+    assert_false "-1x".match?(regexp)
+    assert_false "1,000".match?(regexp)
+    assert_false "1.0".match?(regexp)
+
+    # Edge cases - multiline injection checks (\A and \z)
+    assert_false "1\n".match?(regexp)
+    assert_false "\n1".match?(regexp)
+    assert_false "1\n2".match?(regexp)
+  end
+
+  test "Number.decimal" do
+    regexp = Regexp::Collection::Number.decimal
+
+    # Valid - integers
+    assert_true "0".match?(regexp)
+    assert_true "1".match?(regexp)
+    assert_true "-1".match?(regexp)
+    assert_true "100".match?(regexp)
+
+    # Valid - standard decimals
+    assert_true "0.0".match?(regexp)
+    assert_true "0.5".match?(regexp)
+    assert_true "0.12345".match?(regexp)
+    assert_true "1.0".match?(regexp)
+    assert_true "-1.0".match?(regexp)
+    assert_true "12.34".match?(regexp)
+    assert_true "-12.34".match?(regexp)
+
+    # Valid - negative fractions strictly less than 0
+    assert_true "-0.5".match?(regexp)
+    assert_true "-0.01".match?(regexp)
+    assert_true "-0.00001".match?(regexp)
+
+    # Invalid - zero forms
+    assert_false "-0".match?(regexp)
+    assert_false "+0".match?(regexp)
+    assert_false "-0.0".match?(regexp)
+    assert_false "-0.00".match?(regexp)
+    assert_false "+0.0".match?(regexp)
+    assert_false "+00.0".match?(regexp)
+
+    # Invalid - leading plus and leading zeros
+    assert_false "+1".match?(regexp)
+    assert_false "+1.0".match?(regexp)
+    assert_false "+0.5".match?(regexp)
+    assert_false "01".match?(regexp)
+    assert_false "01.5".match?(regexp)
+
+    # Invalid - structure
+    assert_false ".".match?(regexp)
+    assert_false ".5".match?(regexp)
+    assert_false "-.5".match?(regexp)
+    assert_false "1.".match?(regexp)
+    assert_false "1.2.3".match?(regexp)
+    assert_false "-1.5x".match?(regexp)
+    assert_false "1e5".match?(regexp)
+    assert_false "".match?(regexp)
+
+    # Edge cases - multiline injection checks
+    assert_false "1.5\n".match?(regexp)
+    assert_false "\n1.5".match?(regexp)
+  end
+
+  test "Number.natural" do
+    # Default argument must equal natural(false)
+    assert_equal Regexp::Collection::Number.natural(false), Regexp::Collection::Number.natural
+
+    # natural(true) - including zero
+    reg_with_zero = Regexp::Collection::Number.natural(true)
+    assert_true "0".match?(reg_with_zero)
+    assert_true "1".match?(reg_with_zero)
+    assert_true "16".match?(reg_with_zero)
+    assert_true "999999".match?(reg_with_zero)
+    assert_false "-0".match?(reg_with_zero)
+    assert_false "+0".match?(reg_with_zero)
+    assert_false "00".match?(reg_with_zero)
+    assert_false "-1".match?(reg_with_zero)
+    assert_false "+1".match?(reg_with_zero)
+    assert_false "0.0".match?(reg_with_zero)
+    assert_false "1.0".match?(reg_with_zero)
+    assert_false "0foo".match?(reg_with_zero)
+    assert_false "0\n".match?(reg_with_zero)
+
+    # natural(false) - excluding zero
+    reg_without_zero = Regexp::Collection::Number.natural(false)
+    assert_false "0".match?(reg_without_zero)
+    assert_true "1".match?(reg_without_zero)
+    assert_true "16".match?(reg_without_zero)
+    assert_false "-1".match?(reg_without_zero)
+    assert_false "+1".match?(reg_without_zero)
+    assert_false "01".match?(reg_without_zero)
+    assert_false "".match?(reg_without_zero)
+  end
+
+  test "Number.hexadecimal" do
+    regexp = Regexp::Collection::Number.hexadecimal
+
+    # Valid
+    assert_true "0x0".match?(regexp)
+    assert_true "0x1".match?(regexp)
+    assert_true "0xabcdef".match?(regexp)
+    assert_true "0xABCDEF".match?(regexp)
+    assert_true "0x1a2B3c".match?(regexp)
+    assert_true "0X1a2b".match?(regexp)
+    assert_true "0XDEADBEEF".match?(regexp)
+
+    # Invalid
+    assert_false "".match?(regexp)
+    assert_false "0x".match?(regexp)
+    assert_false "0X".match?(regexp)
+    assert_false "abcdef".match?(regexp)
+    assert_false "x12".match?(regexp)
+    assert_false "0x12g".match?(regexp)
+    assert_false "0x12Z".match?(regexp)
+    assert_false "-0x12".match?(regexp)
+    assert_false " 0x12".match?(regexp)
+    assert_false "0x12\n".match?(regexp)
+  end
+
+  test "Time.seconds_required" do
+    regexp = Regexp::Collection::Time.seconds_required
+
+    # Valid
+    assert_true "00:00:00".match?(regexp)
+    assert_true "01:00:00".match?(regexp)
+    assert_true "1:00:00".match?(regexp)
+    assert_true "12:11:10".match?(regexp)
+    assert_true "12:10:09".match?(regexp)
+    assert_true "23:59:59".match?(regexp)
+
+    # Invalid - missing or excess parts
+    assert_false "".match?(regexp)
+    assert_false "12".match?(regexp)
+    assert_false "12:11".match?(regexp)
+    assert_false "12:11:".match?(regexp)
+    assert_false ":12:11:10".match?(regexp)
+    assert_false "12:0:0".match?(regexp)
+    assert_false "12:10:09.111".match?(regexp)
+
+    # Invalid - boundaries
+    assert_false "24:00:00".match?(regexp)
+    assert_false "25:00:00".match?(regexp)
+    assert_false "12:60:00".match?(regexp)
+    assert_false "12:11:60".match?(regexp)
+
+    # Edge cases
+    assert_false "+12:11:10".match?(regexp)
+    assert_false "12:11:10foo".match?(regexp)
+    assert_false "12:11:10\n".match?(regexp)
+  end
+
+  test "Time.seconds_optional" do
+    regexp = Regexp::Collection::Time.seconds_optional
+
+    # Valid
+    assert_true "00:00".match?(regexp)
+    assert_true "00:00:00".match?(regexp)
+    assert_true "1:00".match?(regexp)
+    assert_true "1:00:00".match?(regexp)
+    assert_true "12:11".match?(regexp)
+    assert_true "12:11:10".match?(regexp)
+    assert_true "23:59".match?(regexp)
+    assert_true "23:59:59".match?(regexp)
+
+    # Invalid
+    assert_false "".match?(regexp)
+    assert_false "12".match?(regexp)
+    assert_false "12:".match?(regexp)
+    assert_false "12:11:".match?(regexp)
+    assert_false "24:00".match?(regexp)
+    assert_false "24:00:00".match?(regexp)
+    assert_false "12:60".match?(regexp)
+    assert_false "12:11:60".match?(regexp)
+    assert_false "12:11:10\n".match?(regexp)
+  end
+
+  test "Time.seconds_not_permitted" do
+    regexp = Regexp::Collection::Time.seconds_not_permitted
+
+    # Valid
+    assert_true "00:00".match?(regexp)
+    assert_true "01:00".match?(regexp)
+    assert_true "1:00".match?(regexp)
+    assert_true "12:11".match?(regexp)
+    assert_true "23:59".match?(regexp)
+
+    # Invalid
+    assert_false "".match?(regexp)
+    assert_false "12:11:10".match?(regexp)
+    assert_false "01:00:00".match?(regexp)
+    assert_false "24:00".match?(regexp)
+    assert_false "12:60".match?(regexp)
+    assert_false "12:11\n".match?(regexp)
+  end
+
+  test "Crypto.trx_wallet_address_base58" do
+    regexp = Regexp::Collection::Crypto.trx_wallet_address_base58
+
+    # Valid TRON Base58 addresses (starts with T, 34 chars)
+    assert_true "TNDzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+    assert_true "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9".match?(regexp)
+    assert_true "TLyqzVGLV1srkB7dToTAEqgDSfPtXRJZYH".match?(regexp)
+
+    # Invalid - wrong prefix
+    assert_false "ANDzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+    assert_false "41DzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+
+    # Invalid - incorrect length
+    assert_false "TNDzfERD73nNqaTTrvNX7moW2GFp3W5am".match?(regexp)  # 33 chars
+    assert_false "TNDzfERD73nNqaTTrvNX7moW2GFp3W5amzz".match?(regexp) # 35 chars
+
+    # Invalid - non-Base58 characters (0, O, I, l)
+    assert_false "T0DzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+    assert_false "TODzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+    assert_false "TIDzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+    assert_false "TlDzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+
+    # Invalid - spaces and newlines
+    assert_false " TNDzfERD73nNqaTTrvNX7moW2GFp3W5amz".match?(regexp)
+    assert_false "TNDzfERD73nNqaTTrvNX7moW2GFp3W5amz\n".match?(regexp)
+    assert_false "".match?(regexp)
+  end
+
+  test "Crypto.evm_wallet_address" do
+    regexp = Regexp::Collection::Crypto.evm_wallet_address
+
+    # Valid (40 hex chars after 0x)
+    assert_true "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045".match?(regexp)
+    assert_true "0x0000000000000000000000000000000000000000".match?(regexp)
+    assert_true "0xffffffffffffffffffffffffffffffffffffffff".match?(regexp)
+    assert_true "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF".match?(regexp)
+
+    # Invalid - non-hex characters (g-z, G-Z)
+    assert_false "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA9604G".match?(regexp)
+    assert_false "0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ".match?(regexp)
+
+    # Invalid - missing prefix
+    assert_false "d8dA6BF26964aF9D7eEd9e03E53415D37aA96045".match?(regexp)
+
+    # Invalid - incorrect length
+    assert_false "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA9604".match?(regexp)   # 39 chars
+    assert_false "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA960455".match?(regexp) # 41 chars
+
+    # Invalid - spaces and newlines
+    assert_false " 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045".match?(regexp)
+    assert_false "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045\n".match?(regexp)
+    assert_false "".match?(regexp)
+  end
+
+  test "Crypto.evm_transaction_hash" do
+    regexp = Regexp::Collection::Crypto.evm_transaction_hash
+
+    # Valid (64 hex chars after 0x)
+    assert_true "0x5c504ed432cb51138b309d43e110f94f6470077cbe40191498b82a8763046ad1".match?(regexp)
+    assert_true "0x5C504ED432CB51138B309D43E110F94F6470077CBE40191498B82A8763046AD1".match?(regexp)
+    assert_true "0x0000000000000000000000000000000000000000000000000000000000000000".match?(regexp)
+
+    # Invalid - non-hex characters
+    assert_false "0x5c504ed432cb51138b309d43e110f94f6470077cbe40191498b82a8763046adG".match?(regexp)
+
+    # Invalid - missing prefix
+    assert_false "5c504ed432cb51138b309d43e110f94f6470077cbe40191498b82a8763046ad1".match?(regexp)
+
+    # Invalid - length
+    assert_false "0x5c504ed432cb51138b309d43e110f94f6470077cbe40191498b82a8763046ad".match?(regexp)   # 63 chars
+    assert_false "0x5c504ed432cb51138b309d43e110f94f6470077cbe40191498b82a8763046ad11".match?(regexp) # 65 chars
+
+    # Invalid - spaces and newlines
+    assert_false "0x5c504ed432cb51138b309d43e110f94f6470077cbe40191498b82a8763046ad1\n".match?(regexp)
+    assert_false "".match?(regexp)
+  end
+end
+</file>
+
+<file path=".gitignore">
+*.gem
+.bundle
+pkg/
+tmp/
+/.idea
+</file>
+
+<file path="Gemfile">
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gemspec
+</file>
+
+<file path="Rakefile">
+# frozen_string_literal: true
+
+require "bundler/gem_tasks"
+require "rake/testtask"
+
+ENV["TESTOPTS"] = "--verbose"
+Rake::TestTask.new do |t|
+  t.libs << "test"
+  t.pattern = "test/**/test_*.rb"
+end
+
+task default: :test
+</file>
+
+<file path="lib/regexp-collection.rb">
+# frozen_string_literal: true
+
+require_relative "regexp_collection"
+</file>
+
+<file path=".ruby-version">
+4.0.7
+</file>
+
+<file path="LICENSE">
+The MIT License (MIT)
+
+Copyright (c) 2018 Yaroslav Konoplov
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="README.md">
+# regexp-collection
+
+A gem providing pre-made and tested typical regular expressions for applications.
+</file>
+
+<file path="regexp-collection.gemspec">
+# frozen_string_literal: true
+
+require_relative "lib/regexp_collection/version"
+
+Gem::Specification.new do |s|
+  s.name                  = "regexp-collection"
+  s.version               = Regexp::Collection::VERSION
+  s.authors               = ["Yaroslav Konoplov"]
+  s.email                 = ["eahome00@gmail.com"]
+  s.summary               = "Regular expression collection for Ruby"
+  s.description           = "A gem providing pre-made and tested typical regular expressions for applications"
+  s.homepage              = "https://github.com/yivo/regexp-collection"
+  s.license               = "MIT"
+
+  s.required_ruby_version = [">= 3.0", "< 5.0"]
+
+  s.files                 = Dir.chdir File.expand_path(__dir__) do
+    `git ls-files -z`.split("\x0").reject { |f| f.match(%r{\A(?:test|spec|features)/}) }
+  end
+  s.require_paths         = ["lib"]
+
+  s.add_development_dependency "rake", "~> 13.4"
+  s.add_development_dependency "test-unit", "~> 3.7"
+end
+</file>
+
+</files>

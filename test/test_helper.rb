@@ -1,6 +1,6 @@
-# encoding: UTF-8
 # frozen_string_literal: true
 
-Bundler.require
+require "test-unit"
+require "regexp_collection"
 
 Test::Unit::TestCase.test_order = :random

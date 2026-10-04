@@ -1,7 +1,12 @@
-# encoding: UTF-8
 # frozen_string_literal: true
 
+require "bundler/gem_tasks"
 require "rake/testtask"
 
 ENV["TESTOPTS"] = "--verbose"
-Rake::TestTask.new { |t| t.libs << "test" }
+Rake::TestTask.new do |t|
+  t.libs << "test"
+  t.pattern = "test/**/test_*.rb"
+end
+
+task default: :test
